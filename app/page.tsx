@@ -7,11 +7,12 @@ import { TreasuryCard } from "@/components/dashboard/treasury-card"
 import { PayrollList } from "@/components/dashboard/payroll-list"
 import { AgentStatusLog } from "@/components/dashboard/agent-status"
 import { TreasuryAgent } from "@/lib/agent"
-import { MOCK_PAYROLLS } from "@/lib/constants"
+import { MOCK_PAYROLLS, MOCK_TREASURY_BALANCE } from "@/lib/constants"
 import type { PayrollEntry, TreasuryBalance, AgentStatus } from "@/lib/types"
-import { Play, RefreshCw } from "lucide-react"
+import { Play, RefreshCw, RotateCcw } from "lucide-react"
 
 export default function Home() {
+  const [agentKey, setAgentKey] = useState(0) // Key to force agent re-initialization
   const [agent] = useState(() => new TreasuryAgent())
   const [treasuryBalance, setTreasuryBalance] = useState<TreasuryBalance>(
     agent.getTreasuryBalance()
@@ -24,6 +25,18 @@ export default function Home() {
   )
   const [agentStatuses, setAgentStatuses] = useState<AgentStatus[]>([])
   const [isRunning, setIsRunning] = useState(false)
+  
+  // Reset agent when key changes
+  useEffect(() => {
+    if (agentKey > 0) {
+      // Force re-initialization by creating new agent instance
+      const newAgent = new TreasuryAgent(MOCK_TREASURY_BALANCE as TreasuryBalance)
+      setTreasuryBalance(newAgent.getTreasuryBalance())
+      setAgentStatuses([])
+      // Note: We can't directly replace the agent in useState, so we'll use the key
+      // to signal that we need to reset. The actual reset happens via window.location.reload
+    }
+  }, [agentKey])
 
   // Update agent statuses when they change
   useEffect(() => {
@@ -79,6 +92,26 @@ export default function Home() {
     }
   }
 
+  const handleResetState = () => {
+    // Reset payrolls to pending
+    setPayrolls(
+      MOCK_PAYROLLS.map((p) => ({
+        ...p,
+        status: "pending" as const,
+      }))
+    )
+    
+    // Reset treasury balance to initial mock values
+    const initialBalance = MOCK_TREASURY_BALANCE as TreasuryBalance
+    setTreasuryBalance(initialBalance)
+    
+    // Clear agent statuses
+    setAgentStatuses([])
+    
+    // Reset agent by reloading page (simplest way to reset agent instance)
+    window.location.reload()
+  }
+
   return (
     <main className="min-h-screen bg-background">
       <div className="container mx-auto p-6 space-y-6">
@@ -90,7 +123,18 @@ export default function Home() {
               AI-powered treasury management agent for DAOs
             </p>
           </div>
-          <WalletConnect />
+          <div className="flex items-center gap-4">
+            <Button
+              onClick={handleResetState}
+              variant="ghost"
+              size="sm"
+              className="gap-2"
+            >
+              <RotateCcw className="h-4 w-4" />
+              Reset State
+            </Button>
+            <WalletConnect />
+          </div>
         </div>
 
         {/* Agent Controls */}

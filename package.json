@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "record-demo": "tsx scripts/record-demo.ts"
   },
   "dependencies": {
     "next": "^14.2.0",
@@ -33,6 +34,8 @@
     "postcss": "^8.4.0",
     "autoprefixer": "^10.4.0",
     "eslint": "^8.57.0",
-    "eslint-config-next": "^14.2.0"
+    "eslint-config-next": "^14.2.0",
+    "playwright": "^1.58.2",
+    "tsx": "^4.21.0"
   }
 }

@@ -83,6 +83,10 @@ export class TreasuryAgent {
    */
   async checkYields(): Promise<YieldInfo> {
     this.addStatus("Checking yields from Arc RWA vault...", "info", "checkYields")
+    await new Promise(r => setTimeout(r, 1500))
+    
+    this.addStatus("Analyzing Arc vault APY...", "info", "checkYields")
+    await new Promise(r => setTimeout(r, 1500))
     
     try {
       // Fetch current APY from Arc vault
@@ -90,6 +94,8 @@ export class TreasuryAgent {
       
       // Update treasury balance with new APY
       this.treasuryBalance.rwa.apy = apy
+      
+      await new Promise(r => setTimeout(r, 1500))
       
       // Calculate new RWA value based on APY (simplified: assume value grows with yield)
       const rwaValue = parseFloat(this.treasuryBalance.rwa.value)
@@ -129,6 +135,7 @@ export class TreasuryAgent {
    */
   async rebalance(): Promise<string | null> {
     this.addStatus("Checking if rebalancing is needed...", "info", "rebalance")
+    await new Promise(r => setTimeout(r, 1500))
     
     try {
       const usdcBalance = parseFloat(this.treasuryBalance.usdc.value)
@@ -148,6 +155,10 @@ export class TreasuryAgent {
             "warning",
             "rebalance"
           )
+          await new Promise(r => setTimeout(r, 1500))
+          
+          this.addStatus("Calculating optimal swap route on Uniswap v4...", "info", "rebalance")
+          await new Promise(r => setTimeout(r, 1500))
           
           // Get swap quote from Uniswap V4
           const quote = await getSwapQuote(
@@ -156,11 +167,15 @@ export class TreasuryAgent {
             CONTRACT_ADDRESSES.USDC
           )
           
+          await new Promise(r => setTimeout(r, 1500))
+          
           // Execute swap
           const txHash = await swapToUSDC(
             quote.inputAmount,
             quote.outputAmount
           )
+          
+          await new Promise(r => setTimeout(r, 1500))
           
           // Update balances (mock update)
           this.treasuryBalance.rwa.value = (rwaBalance - needed).toFixed(2)
@@ -212,6 +227,7 @@ export class TreasuryAgent {
       "info",
       "executePayroll"
     )
+    await new Promise(r => setTimeout(r, 1500))
     
     const successful: string[] = []
     const failed: { recipient: string; reason: string }[] = []
@@ -232,6 +248,9 @@ export class TreasuryAgent {
     // Ensure we have enough USDC
     await this.rebalance()
     
+    this.addStatus("Verifying ENS names...", "info", "executePayroll")
+    await new Promise(r => setTimeout(r, 1500))
+    
     for (const recipient of recipients) {
       try {
         this.addStatus(
@@ -239,9 +258,12 @@ export class TreasuryAgent {
           "info",
           "executePayroll"
         )
+        await new Promise(r => setTimeout(r, 1500))
         
         // Resolve ENS name to address
         const address = await resolveENS(recipient.recipient)
+        
+        await new Promise(r => setTimeout(r, 1500))
         
         if (!address) {
           failed.push({
@@ -285,11 +307,14 @@ export class TreasuryAgent {
           "info",
           "executePayroll"
         )
+        await new Promise(r => setTimeout(r, 1500))
         
         const txHash = await transferUSDC(
           address,
           parseUnits(amount.toString(), 6).toString() // USDC has 6 decimals
         )
+        
+        await new Promise(r => setTimeout(r, 1500))
         
         // Update balance
         this.treasuryBalance.usdc.value = (usdcBalance - amount).toFixed(2)
@@ -304,6 +329,7 @@ export class TreasuryAgent {
           "success",
           "executePayroll"
         )
+        await new Promise(r => setTimeout(r, 1500))
       } catch (error) {
         failed.push({
           recipient: recipient.recipient,
@@ -337,23 +363,39 @@ export class TreasuryAgent {
     
     this.isRunning = true
     this.addStatus("Starting agent cycle...", "info", "runCycle")
+    await new Promise(r => setTimeout(r, 1500))
     
     try {
       // 1. Check yields
+      this.addStatus("Step 1: Analyzing treasury yields...", "info", "runCycle")
+      await new Promise(r => setTimeout(r, 1500))
       await this.checkYields()
+      await new Promise(r => setTimeout(r, 1500))
       
       // 2. Rebalance if needed
+      this.addStatus("Step 2: Evaluating liquidity requirements...", "info", "runCycle")
+      await new Promise(r => setTimeout(r, 1500))
       await this.rebalance()
+      await new Promise(r => setTimeout(r, 1500))
       
       // 3. Check and execute payroll if it's payroll day
       const today = new Date()
       const isPayrollDay = today.getDate() === AGENT_CONFIG.PAYROLL_DAY
       
       if (isPayrollDay) {
+        this.addStatus("Step 3: Processing payroll execution...", "info", "runCycle")
+        await new Promise(r => setTimeout(r, 1500))
         const pendingPayrolls = payrolls.filter((p) => p.status === "pending")
         if (pendingPayrolls.length > 0) {
           await this.executePayroll(pendingPayrolls)
         }
+      } else {
+        this.addStatus(
+          `Step 3: Skipping payroll (not the ${AGENT_CONFIG.PAYROLL_DAY}th of the month)`,
+          "info",
+          "runCycle"
+        )
+        await new Promise(r => setTimeout(r, 1500))
       }
       
       this.addStatus("Agent cycle completed successfully!", "success", "runCycle")
